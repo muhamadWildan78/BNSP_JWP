@@ -1,144 +1,107 @@
-<?php
-// Include config file
-require_once "config.php";
-
-// Define variables and initialize with empty values
-$username = $password = $confirm_password = "";
-$username_err = $password_err = $confirm_password_err = "";
-
-// Processing form data when form is submitted
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
-
-  // Validate username
-  if (empty(trim($_POST["username"]))) {
-    $username_err = "Please enter a username.";
-  } elseif (!preg_match('/^[a-zA-Z0-9_]+$/', trim($_POST["username"]))) {
-    $username_err = "Username can only contain letters, numbers, and underscores.";
-  } else {
-    // Prepare a select statement
-    $sql = "SELECT id FROM users WHERE username = :username";
-
-    if ($stmt = $pdo->prepare($sql)) {
-      // Bind variables to the prepared statement as parameters
-      $stmt->bindParam(":username", $param_username, PDO::PARAM_STR);
-
-      // Set parameters
-      $param_username = trim($_POST["username"]);
-
-      // Attempt to execute the prepared statement
-      if ($stmt->execute()) {
-        if ($stmt->rowCount() == 1) {
-          $username_err = "This username is already taken.";
-        } else {
-          $username = trim($_POST["username"]);
-        }
-      } else {
-        echo "Oops! Something went wrong. Please try again later.";
-      }
-
-      // Close statement
-      unset($stmt);
-    }
-  }
-
-  // Validate password
-  if (empty(trim($_POST["password"]))) {
-    $password_err = "Please enter a password.";
-  } elseif (strlen(trim($_POST["password"])) < 6) {
-    $password_err = "Password must have atleast 6 characters.";
-  } else {
-    $password = trim($_POST["password"]);
-  }
-
-  // Validate confirm password
-  if (empty(trim($_POST["confirm_password"]))) {
-    $confirm_password_err = "Please confirm password.";
-  } else {
-    $confirm_password = trim($_POST["confirm_password"]);
-    if (empty($password_err) && ($password != $confirm_password)) {
-      $confirm_password_err = "Password did not match.";
-    }
-  }
-
-  // Check input errors before inserting in database
-  if (empty($username_err) && empty($password_err) && empty($confirm_password_err)) {
-
-    // Prepare an insert statement
-    $sql = "INSERT INTO users (username, password) VALUES (:username, :password)";
-
-    if ($stmt = $pdo->prepare($sql)) {
-      // Bind variables to the prepared statement as parameters
-      $stmt->bindParam(":username", $param_username, PDO::PARAM_STR);
-      $stmt->bindParam(":password", $param_password, PDO::PARAM_STR);
-
-      // Set parameters
-      $param_username = $username;
-      $param_password = password_hash($password, PASSWORD_DEFAULT); // Creates a password hash
-
-      // Attempt to execute the prepared statement
-      if ($stmt->execute()) {
-        // Redirect to login page
-        header("location: login.php");
-      } else {
-        echo "Oops! Something went wrong. Please try again later.";
-      }
-
-      // Close statement
-      unset($stmt);
-    }
-  }
-
-  // Close connection
-  unset($pdo);
-}
-?>
-
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 
 <head>
-  <meta charset="UTF-8">
-  <title>Sign Up</title>
-  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="">
+  <meta name="author" content="Mark Otto, Jacob Thornton, and Bootstrap contributors">
+  <meta name="generator" content="Hugo 0.101.0">
+  <title>Signin Template · Bootstrap v5.2</title>
+
+  <link rel="canonical" href="https://getbootstrap.com/docs/5.2/examples/sign-in/">
+
+
+
+
+
+  <link href="assets/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- style CSS Bootstrap -->
   <style>
-    body {
-      font: 14px sans-serif;
+    .bd-placeholder-img {
+      font-size: 1.125rem;
+      text-anchor: middle;
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      user-select: none;
     }
 
-    .wrapper {
-      width: 360px;
-      padding: 20px;
+    @media (min-width: 768px) {
+      .bd-placeholder-img-lg {
+        font-size: 3.5rem;
+      }
+    }
+
+    .b-example-divider {
+      height: 3rem;
+      background-color: rgba(0, 0, 0, .1);
+      border: solid rgba(0, 0, 0, .15);
+      border-width: 1px 0;
+      box-shadow: inset 0 .5em 1.5em rgba(0, 0, 0, .1), inset 0 .125em .5em rgba(0, 0, 0, .15);
+    }
+
+    .b-example-vr {
+      flex-shrink: 0;
+      width: 1.5rem;
+      height: 100vh;
+    }
+
+    .bi {
+      vertical-align: -.125em;
+      fill: currentColor;
+    }
+
+    .nav-scroller {
+      position: relative;
+      z-index: 2;
+      height: 2.75rem;
+      overflow-y: hidden;
+    }
+
+    .nav-scroller .nav {
+      display: flex;
+      flex-wrap: nowrap;
+      padding-bottom: 1rem;
+      margin-top: -1px;
+      overflow-x: auto;
+      text-align: center;
+      white-space: nowrap;
+      -webkit-overflow-scrolling: touch;
     }
   </style>
+  <!-- Custom styles for this template -->
+  <link href="styles/signin.css" rel="stylesheet">
 </head>
 
-<body>
-  <div class="wrapper">
-    <h2>Sign Up</h2>
-    <p>Please fill this form to create an account.</p>
-    <form action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>" method="post">
-      <div class="form-group">
-        <label>Username</label>
-        <input type="text" name="username" class="form-control <?php echo (!empty($username_err)) ? 'is-invalid' : ''; ?>" value="<?php echo $username; ?>">
-        <span class="invalid-feedback"><?php echo $username_err; ?></span>
+<body class="text-right">
+  <!-- membuat form register -->
+  <main class="form-signin w-100 m-auto">
+    <form action="process/register_process.php" method="post">
+      <h1 class="h3 mb-3 fw-normal">Sign Up</h1>
+      <div class="mb-3">
+        <label for="inputUser" class="form-label">Username</label>
+        <input type="text" name="username" class="form-control" id="username">
       </div>
-      <div class="form-group">
-        <label>Password</label>
-        <input type="password" name="password" class="form-control <?php echo (!empty($password_err)) ? 'is-invalid' : ''; ?>" value="<?php echo $password; ?>">
-        <span class="invalid-feedback"><?php echo $password_err; ?></span>
+
+      <div class="mb-3">
+        <label for="exampleInputEmail1" class="form-label">Email</label>
+        <input type="email" name="email" class="form-control" id="email" aria-describedby="emailHelp">
       </div>
-      <div class="form-group">
-        <label>Confirm Password</label>
-        <input type="password" name="confirm_password" class="form-control <?php echo (!empty($confirm_password_err)) ? 'is-invalid' : ''; ?>" value="<?php echo $confirm_password; ?>">
-        <span class="invalid-feedback"><?php echo $confirm_password_err; ?></span>
+
+      <div class="mb-3">
+        <label for="exampleInputPassword1" class="form-label">Password</label>
+        <input type="password" name="password" class="form-control" id="password">
       </div>
-      <div class="form-group">
-        <input type="submit" class="btn btn-primary" value="Submit">
-        <input type="reset" class="btn btn-secondary ml-2" value="Reset">
+
+      <div class="mb-3">
+        <label for="PasswordConfirmed" class="form-label">Confirm Password</label>
+        <input type="password" name="confirm_password" class="form-control" id="password">
       </div>
-      <p>Already have an account? <a href="login.php">Login here</a>.</p>
+      <!-- membuat button sign up -->
+      <button class="w-100 btn btn-lg btn-primary" type="submit">Sign Up</button>
+      <p class="mt-5 mb-3 text-center">&copy; muhamadwildan-2022</p>
     </form>
-  </div>
+  </main>
 </body>
 
 </html>
